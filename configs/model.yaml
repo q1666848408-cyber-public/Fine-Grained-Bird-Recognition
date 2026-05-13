@@ -1,0 +1,20 @@
+# Model configuration (showcase version)
+
+detection:
+  model: yolov8s_cbam
+  img_size: 640
+  loss: siou
+  conf_threshold: 0.25
+  iou_threshold: 0.45
+
+classifier:
+  model: swin_b_tara_cascade
+  img_size: 224
+  levels: [order, family, genus, species]
+  num_classes: [13, 37, 122, 200]
+
+edge:
+  device: sophon_se5
+  chip: bm1684
+  precision: int8
+  target_latency_ms: 23
