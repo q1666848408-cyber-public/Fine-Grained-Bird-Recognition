@@ -1,67 +1,104 @@
-# Fine-Grained-Bird-Recognition
+<div align="center">
 
-![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+# 🐦 Fine-Grained Bird Recognition on Edge Devices
 
-> **Showcase** — ~15% skeleton. Core implementation not included.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org)
+[![YOLOv8](https://img.shields.io/badge/YOLOv8-Detection-00FFFF?style=flat-square)](https://github.com/ultralytics/ultralytics)
+[![Swin](https://img.shields.io/badge/Swin--B-Classifier-7B68EE?style=flat-square)](https://github.com/microsoft/Swin-Transformer)
+[![Sophon](https://img.shields.io/badge/Sophon-SE5-FF6B35?style=flat-square)](https://www.sophon.ai)
 
-Fine-grained bird species recognition deployed on the Sophon SE5 edge AI chip. Combines YOLOv8 for detection with Swin Transformer-Base for classification across 200 species at 22.9 ms / 43 FPS on-device.
+**Two-stage edge pipeline for 200-class fine-grained bird recognition — YOLOv8s-CBAM detection → TARA-Cascade Swin-B classifier**
 
-## Stack
+> ⚠️ **Showcase Only** — ~15% skeleton. Training code, model weights & dataset processing not included.
 
-- Python, PyTorch
-- YOLOv8 (detection stage)
-- Swin Transformer-Base (classification stage)
-- Sophon SE5 TPU SDK (BM1684X)
+</div>
 
-## Architecture
+---
 
-```
-Input frame
-    └── YOLOv8 detector        # locates bird bounding boxes
-         └── Swin-B classifier # per-crop species prediction (200 classes)
-              └── Result overlay + latency counter
-```
+## ✨ Overview
 
-Detection and classification run sequentially on the SE5 TPU. The SDK compiles each model to BModel format before deployment.
+Undergraduate thesis project at Sichuan University. The system detects birds in natural images and classifies them across 200 fine-grained species (CUB-200-2011), with hierarchical Order / Family / Genus / Species predictions. Optimized for real-time inference on the Sophon SE5 edge AI box.
 
-## Performance
+**Final performance on edge device:** 22.9 ms / frame · 43 FPS · ~91% Top-1.
 
-| Metric | Value |
-|--------|-------|
-| Inference latency | 22.9 ms |
-| Throughput | 43 FPS |
-| Species | 200 |
-| Platform | Sophon SE5 (BM1684X) |
+---
 
-## Usage
-
-```bash
-# Compile models to BModel (requires TPU SDK)
-python tools/compile.py --detector yolov8n.pt --classifier swin_base.pth
-
-# Run inference on a video file
-python infer.py --input video.mp4 --output result.mp4
-
-# Run on a live RTSP stream
-python infer.py --input rtsp://camera-ip/stream
-```
-
-## Structure
+## 🏗️ Architecture
 
 ```
-Fine-Grained-Bird-Recognition/
-├── models/          # BModel files (compiled)
-├── tools/
-│   └── compile.py   # TPU model compiler wrapper
-├── infer.py         # main inference entry point
-├── classifier.py    # Swin-B classification module
-├── detector.py      # YOLOv8 detection module
+                Input Image
+                     │
+                     ▼
+        ┌────────────────────────────┐
+        │  Stage 1 · Detection       │
+        │  YOLOv8s + CBAM + SIoU     │
+        └──────────────┬─────────────┘
+                       │ cropped bird patch
+                       ▼
+        ┌────────────────────────────┐
+        │  Stage 2 · Classification  │
+        │  TARA-Cascade Swin-B       │
+        │  ├── Order   (13 classes)  │
+        │  ├── Family  (37 classes)  │
+        │  ├── Genus   (122 classes) │
+        │  └── Species (200 classes) │
+        └──────────────┬─────────────┘
+                       │
+                       ▼
+              Hierarchical Output
+                       │
+                       ▼
+        ┌────────────────────────────┐
+        │  Edge Deployment           │
+        │  Sophon SE5 · BMNNSDK      │
+        │  22.9ms / 43 FPS           │
+        └────────────────────────────┘
+```
+
+---
+
+## 📁 Structure
+
+```
+fine-grained-bird-recognition/
+├── src/
+│   ├── detection/
+│   │   └── yolov8_cbam.py       # YOLOv8s + CBAM + SIoU
+│   ├── classifier/
+│   │   └── swin_tara.py         # TARA-Cascade Swin-B
+│   └── edge/
+│       └── sophon_deploy.py     # Sophon SE5 inference wrapper
+├── configs/
+│   └── model.yaml
 └── requirements.txt
 ```
 
-## Requirements
+---
 
-- Sophon SE5 board with BM1684X
-- TPU SDK >= 3.0
-- Python 3.8+
-- PyTorch 1.13+
+## 🔧 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Detection | YOLOv8s + CBAM attention + SIoU loss |
+| Classification | Swin Transformer-Base + TARA Cascade |
+| Framework | PyTorch 2.x |
+| Edge Runtime | BMNNSDK on Sophon SE5 (BM1684) |
+| Dataset | CUB-200-2011 |
+
+---
+
+## 📊 Key Results
+
+| Stage | Metric | Value |
+|---|---|---|
+| Detection | mAP@50 | 96.2% |
+| Classification (Species) | Top-1 | 91.3% |
+| Edge Inference | Latency | 22.9 ms |
+| Edge Inference | Throughput | 43 FPS |
+
+---
+
+<div align="center">
+<sub>Showcase version · Core training code not included · For portfolio reference only</sub>
+</div>
